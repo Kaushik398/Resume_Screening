@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { API_BASE, apiFetch, checkBackendHealth } from './api'
+import { supabase, isDemoMode } from './supabase'
+import Auth from './components/Auth'
 
 async function parseJsonResponse(res) {
   const data = await res.json().catch(() => ({}))
@@ -27,6 +29,8 @@ const emptyResume = {
 }
 
 export default function App() {
+  const [session, setSession] = useState(null)
+  const [authChecking, setAuthChecking] = useState(true)
   const [resumeForm, setResumeForm] = useState(emptyResume)
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
@@ -41,6 +45,19 @@ export default function App() {
   const [testFeedback, setTestFeedback] = useState(null)
   const [step, setStep] = useState('input')
   const [backendOnline, setBackendOnline] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setAuthChecking(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     checkBackendHealth().then(setBackendOnline)
@@ -186,12 +203,41 @@ export default function App() {
     return null
   }
 
+  if (authChecking) {
+    return <div className="loading">Checking authentication...</div>
+  }
+
+  if (!session) {
+    return <Auth onAuthSuccess={(s) => setSession(s)} />
+  }
+
   return (
     <div className="app">
-      <header>
-        <h1>Resume Screening</h1>
-        <p>Upload or paste your existing resume, add a job description, and run match screening.</p>
-      </header>
+      <div className="app-header-container">
+        <header>
+          <h1>Resume Screening</h1>
+          <p>Upload or paste your resume, add a job description, and run match screening.</p>
+        </header>
+        <div className="header-user-profile">
+          <div className="user-avatar">
+            {session.user.email ? session.user.email[0].toUpperCase() : 'U'}
+          </div>
+          <span className="user-email" title={session.user.email}>
+            {session.user.email}
+          </span>
+          {isDemoMode && <span className="demo-auth-pill">Demo</span>}
+          <button
+            type="button"
+            className="btn-logout"
+            onClick={async () => {
+              await supabase.auth.signOut()
+              resetAll()
+            }}
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
 
       {backendOnline === false && (
         <div className="error backend-offline">

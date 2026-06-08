@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 // Direct backend URL works without Vite proxy (e.g. opening wrong port or preview build).
 // Override with VITE_API_URL in .env if needed.
 export const API_BASE =
@@ -5,8 +7,29 @@ export const API_BASE =
 
 export async function apiFetch(path, options = {}) {
   const url = `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`
+  
+  let token = null
   try {
-    const res = await fetch(url, options)
+    const { data } = await supabase.auth.getSession()
+    if (data?.session) {
+      token = data.session.access_token
+    }
+  } catch (e) {
+    console.error('Error fetching session for API request:', e)
+  }
+
+  const headers = { ...options.headers }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const fetchOptions = {
+    ...options,
+    headers,
+  }
+
+  try {
+    const res = await fetch(url, fetchOptions)
     return res
   } catch {
     throw new Error(
