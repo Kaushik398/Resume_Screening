@@ -6,6 +6,7 @@ export default function Auth({ onAuthSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -40,8 +41,6 @@ export default function Auth({ onAuthSuccess }) {
         })
         if (signUpError) throw signUpError
 
-        // Supabase might require email confirmation.
-        // In our mock/demo mode, it logs in automatically.
         if (data?.session) {
           onAuthSuccess(data.session)
         } else {
@@ -67,104 +66,181 @@ export default function Auth({ onAuthSuccess }) {
     }
   }
 
+  const handleGoogleAuth = () => {
+    // Simulates OAuth flow locally
+    setLoading(true)
+    setTimeout(() => {
+      const user = { id: `google-usr-${Math.random().toString(36).substr(2, 9)}`, email: 'google.user@company.com' }
+      const session = {
+        access_token: `demo-token-${btoa(JSON.stringify(user))}`,
+        user,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      }
+      localStorage.setItem('demo_session', JSON.stringify(session))
+      onAuthSuccess(session)
+      setLoading(false)
+    }, 1200)
+  }
+
   return (
-    <div className="auth-container">
-      <div className="auth-glass-card">
-        <div className="auth-header">
-          <div className="logo-glow"></div>
-          <span className="auth-logo-icon">🔒</span>
-          <h2>ResumeScreen.AI</h2>
-          <p>Sign in or register to analyze resumes and access assessments</p>
+    <div className="landing-layout">
+      {/* Top Header Logo */}
+      <header className="landing-top-bar">
+        <div className="logo-group">
+          <span className="logo-icon">💠</span>
+          <span className="logo-text">ResumeScreen.AI</span>
         </div>
+        <div className="nav-badges">
+          <span className="badge-pill">v2.1 Enterprise</span>
+        </div>
+      </header>
 
-        {isDemoMode && (
-          <div className="auth-demo-badge">
-            <span className="pulse-dot"></span>
-            <span>Running in Demo Auth Mode</span>
-            <div className="demo-tooltip">
-              Supabase credentials are not configured. You can sign up/in with any credentials for local testing.
+      {/* Main Container */}
+      <main className="landing-main">
+        {/* Left Hand: Hero details and animations */}
+        <section className="landing-hero-section">
+          <div className="hero-text-container">
+            <h1 className="hero-heading animate-fade-in">
+              AI-Powered Resume Screening & Assessment Platform
+            </h1>
+            <p className="hero-subheading animate-fade-in delay-1">
+              Shortlist high-quality applicants instantly. Parse resumes, analyze job requirements, match skills, and deploy dynamic coding assessments, all in one premium ATS dashboard.
+            </p>
+          </div>
+
+          {/* Floating AI Illustration */}
+          <div className="hero-illustration-container animate-fade-in delay-2">
+            <div className="avatar-mesh">
+              <div className="orbit-item core-scanner">💻</div>
+              <div className="orbit-item node-ai">🤖</div>
+              <div className="orbit-item node-db">📊</div>
+              <div className="orbit-item node-doc">📄</div>
+              <div className="glow-sphere"></div>
             </div>
           </div>
-        )}
+        </section>
 
-        <div className="auth-tabs">
-          <button
-            type="button"
-            className={`auth-tab ${!isSignUp ? 'active' : ''}`}
-            onClick={() => {
-              setIsSignUp(false)
-              setError('')
-              setSuccessMsg('')
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`auth-tab ${isSignUp ? 'active' : ''}`}
-            onClick={() => {
-              setIsSignUp(true)
-              setError('')
-              setSuccessMsg('')
-            }}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {error && <div className="auth-error-banner">{error}</div>}
-        {successMsg && <div className="auth-success-banner">{successMsg}</div>}
-
-        <form onSubmit={handleAuth} className="auth-form">
-          <div className="input-group">
-            <label htmlFor="auth-email">Email Address</label>
-            <input
-              id="auth-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@company.com"
-              required
-            />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="auth-password">Password</label>
-            <input
-              id="auth-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          {isSignUp && (
-            <div className="input-group">
-              <label htmlFor="auth-confirm-password">Confirm Password</label>
-              <input
-                id="auth-confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+        {/* Right Hand: Auth Glass Card */}
+        <section className="landing-auth-section">
+          <div className="auth-glass-card">
+            <div className="auth-header">
+              <h2>{isSignUp ? 'Create Recruiter Account' : 'Welcome Back'}</h2>
+              <p>
+                {isSignUp
+                  ? 'Sign up to build ATS resumes and screen applicants.'
+                  : 'Log in to access candidate profiles and assessment rooms.'}
+              </p>
             </div>
-          )}
 
-          <button type="submit" className="auth-submit-btn" disabled={loading}>
-            {loading ? (
-              <span className="spinner"></span>
-            ) : isSignUp ? (
-              'Create Account'
-            ) : (
-              'Sign In'
+            {isDemoMode && (
+              <div className="auth-demo-badge">
+                <span className="pulse-dot"></span>
+                <span>Demo Sandbox Mode Active</span>
+              </div>
             )}
-          </button>
-        </form>
-      </div>
+
+            {error && <div className="auth-error-banner">{error}</div>}
+            {successMsg && <div className="auth-success-banner">{successMsg}</div>}
+
+            <form onSubmit={handleAuth} className="auth-form">
+              <div className="input-group">
+                <label htmlFor="auth-email">Email Address</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="recruiter@company.com"
+                  required
+                />
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="auth-password">Password</label>
+                <input
+                  id="auth-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              {isSignUp && (
+                <div className="input-group">
+                  <label htmlFor="auth-confirm-password">Confirm Password</label>
+                  <input
+                    id="auth-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="auth-options-row">
+                <label className="remember-me">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember Me</span>
+                </label>
+                <a href="#forgot" className="forgot-pwd-link" onClick={() => alert("Demo Mode: Contact admin or register a new account.")}>
+                  Forgot Password?
+                </a>
+              </div>
+
+              <button type="submit" className="auth-submit-btn" disabled={loading}>
+                {loading ? (
+                  <span className="spinner"></span>
+                ) : isSignUp ? (
+                  'Create Account'
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </form>
+
+            <div className="auth-divider">
+              <span>or continue with</span>
+            </div>
+
+            <button type="button" className="auth-google-btn" onClick={handleGoogleAuth} disabled={loading}>
+              <span className="google-icon">G</span> Sign in with Google
+            </button>
+
+            <p className="auth-toggle-tip">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <button
+                type="button"
+                className="btn-link"
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setError('')
+                  setSuccessMsg('')
+                }}
+              >
+                {isSignUp ? 'Sign In here' : 'Register now'}
+              </button>
+            </p>
+          </div>
+        </section>
+      </main>
+
+      {/* Landing Footer */}
+      <footer className="landing-footer">
+        <div className="footer-credits">
+          <span>&copy; 2026 ResumeScreen.AI. All rights reserved.</span>
+          <span className="footer-links">
+            <a href="#terms">Terms of Service</a> &bull; <a href="#privacy">Privacy Policy</a> &bull; <a href="#help">Help Desk</a>
+          </span>
+        </div>
+      </footer>
     </div>
   )
 }
